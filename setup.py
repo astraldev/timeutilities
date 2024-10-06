@@ -1,21 +1,15 @@
-from setuptools import setup
-import pathlib
-import os
-
-here = pathlib.Path(__file__).parent
-os.chdir(here)
+from distutils.core import setup
 
 setup(
-  name="timeutilities",
-  version="1.1",
-  license="GNU GPL 3",
-  url="http://astraldev.github.io/timeutilities",
-  description="Time handling and manipulation",
-  long_description=str(open('README.md').read()),
-  long_description_content_type="text/markdown",
-  author="AstralDev",
-  author_email="ekureedem480@gmail.com",
-  python_requires='>=3',
-  install_requires=["niceprint"],
-  py_modules=["timeutilities"]
+    name="timeutilities",
+    version="1.2",
+    url="https://github.com/astraldev/timeutilities",
+    license="MIT",
+    author="astraldev",
+    author_email="ekureedem480@gmail.com",
+    description="Minimal utilities for time managements and manipulation",
+    py_modules=["timeutilities"],
+    long_description=str(open("README.md").read()),
+    long_description_content_type="text/markdown",
+    python_requires=">=3",
 )

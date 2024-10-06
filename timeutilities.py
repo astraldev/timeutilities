@@ -1,14 +1,46 @@
-import datetime
+import datetime, asyncio
 from threading import Timer
-from niceprint import SetInterval
 
 class TimerRunningError(Exception):
     """Is thrown when a timer is already running"""
-    
     def __init__(self, *args):
         super().__init__("Timer already running")
         pass
+
+class InvalidType(TypeError):
+    "Raised if object type is not a valid Time Instance"
+    def __init__(self, *args):
+        super().__init__("Invalid type")
+        pass
     
+
+class SetInterval:
+    def __init__(self, interval: int, function):
+        self.ticks = 0
+        self.interval = interval
+        self.function = function
+        self._timer: Timer = None
+        self.is_cancelled = False
+    
+    def begin(self):
+        if not self._timer is None: raise TimerRunningError()
+        self.start_internal_counter()
+
+    def start_internal_counter(self):
+        self.function()
+        self._timer = Timer(self.interval, self.start_internal_counter)
+        self.ticks = self.ticks + 1
+        self._timer.start()
+
+    def cancel(self):
+        if self._timer is None: return
+        self.ticks = 0
+        self._timer.cancel()
+        self._timer = None
+    
+    def __del__(self):
+        self.cancel()
+
 class Time:
     """
     Creates a time object limited to days, hours, minutes and seconds.
@@ -19,35 +51,30 @@ class Time:
         self.minute = minute
         self.hour = hour
         self.day = day
-        self._timers = []
         self._tick_timer = None
         self.rework_time()
+        self.end_tick()
 
-    def __del__(self):
-        for tm in self._timers:
-            if isinstance(tm, Timer):
-                try:
-                    tm.cancel()
-                except:
-                    pass
-
-    def tick(self, keep=False, func=None):
-        if isinstance(self._tick_timer, SetInterval):
-            return
-
-        def _tick(self):
+    def tick(self, keep=False, func=None, *args, **kwargs):
+        if isinstance(self._tick_timer, SetInterval): return
+        def _tick():
             self.second += 1
+            if func is not None: func(*args, **kwargs)
+
         if keep:
-            tm = SetInterval(1, _tick, [self])
-            self._tick_timer = tm
-            self._timers.append(tm)
-            if func is not None:
-                func()
+            self._tick_timer = SetInterval(1, _tick)
+            self._tick_timer.begin()
+            
         else:
             self.second += 1
             self.rework_time()
+    
+    def end_tick(self):
+        if isinstance(self._tick_timer, SetInterval):
+            self._tick_timer.cancel()
+            self._tick_timer = None
 
-    def to_datetime(self):
+    def to_time(self) -> datetime.time:
         return datetime.time(self.hour, self.minute, self.second)
 
     def to_seconds(self):
@@ -56,6 +83,9 @@ class Time:
             (self.hour * 60 * 60) + \
             (self.day * 24 * 60 * 60)
         return ts
+    
+    def to_minutes(self):
+        return self.to_seconds() // 60
 
     def rework_time(self):
         seconds = self.to_seconds()
@@ -78,37 +108,55 @@ class Time:
 
     @staticmethod
     def from_datetime(date: datetime.datetime):
-        "Does not contain month or year.. So only the day is returned"
+        "Does not contain support for month or year.. So only the day is returned"
         day = datetime.datetime.now().timetuple().tm_yday - date.timetuple().tm_yday
         return Time(date.second, date.minute, date.hour, day)
 
-    def __gt__(self, obj):
-        return self.to_seconds() > obj.to_seconds()
+    def __gt__(self, target):
+        if isinstance(target, int): return self.to_seconds() > target
+        if isinstance(target, Time): return self.to_seconds() > target.to_seconds()
+        raise InvalidType()
         
-    def __ge__(self, obj):
-        return self.to_seconds() >= obj.to_seconds()
         
-    def __lt__(self, obj):
-        return self.to_seconds() < obj.to_seconds()
-    def __le__(self, obj):
-        return self.to_seconds() <= obj.to_seconds()
+    def __ge__(self, target):
+        if isinstance(target, int): return self.to_seconds() >= target
+        if isinstance(target, Time): return self.to_seconds() >= target.to_seconds()
+        raise InvalidType()
+        
+    def __lt__(self, target):
+        if isinstance(target, int): return self.to_seconds() < target
+        if isinstance(target, Time): return self.to_seconds() < target.to_seconds()
+        raise InvalidType()
+    
+    def __le__(self, target):
+        if isinstance(target, int): return self.to_seconds() <= target
+        if isinstance(target, Time): return self.to_seconds() <= target.to_seconds()
+        raise InvalidType()
 
-    def __add__(self, obj):
-        secs = self.to_seconds() + obj.to_seconds()
-        return Time.from_seconds(secs)
+    def __add__(self, target):
+        if isinstance(target, int): return Time.from_seconds(self.to_seconds() + target)
+        if isinstance(target, Time): return Time.from_seconds(self.to_seconds() + target.to_seconds())
+        raise InvalidType()
 
-    def __sub__(self, obj):
-        secs = self.to_seconds() - obj.to_seconds()
-        return Time.from_seconds(secs)
+    def __sub__(self, target):
+        if isinstance(target, int): return Time.from_seconds(self.to_seconds() - target)
+        if isinstance(target, Time): return Time.from_seconds(self.to_seconds() - target.to_seconds())
+        else:raise InvalidType()
+    
+    def __eq__(self, target) -> bool:
+        if isinstance(target, int): return self.to_seconds() == target
+        if isinstance(target, Time): return self.to_seconds() == target.to_seconds()
+        raise InvalidType()
 
     def __str__(self, *args):
-        return f"{self.day} day{ 's' if self.day < 1 or self.days > 1 else ''}, {str(self.hour).rjust(2, '0')}:{str(self.minute).rjust(2, '0')}:{str(self.second).rjust(2, '0')}\n"
+        return f"{self.day} day{ 's' if self.day < 1 or self.day > 1 else ''}, {str(self.hour).rjust(2, '0')}:{str(self.minute).rjust(2, '0')}:{str(self.second).rjust(2, '0')}\n"
 
     def __div__(self, num):
-        if type(num) != int:
-            raise ValueError
-        else:
+        if isinstance(num, Time):
+            Time.from_seconds(self.to_seconds()/num)
+        elif isinstance(num, int):
             return Time.from_seconds(self.to_seconds()/num)
+        else: raise ValueError
             
 if __name__ == "__main__":
     print(Time.now())

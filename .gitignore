@@ -3,3 +3,5 @@ __pycache__
 PKG-info
 env/
 docs/**
+.pytest_cache
+.idea

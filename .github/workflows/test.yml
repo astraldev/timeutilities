@@ -1,0 +1,23 @@
+name: Test Commit
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+          architecture: 'x64'
+
+      - name: Display Python version
+        run: python3 -c "import sys; print(sys.version)"
+      
+      - name: Run tests
+        run: |
+          python -m unittest -v timeutilities_test.py

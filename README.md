@@ -1,29 +1,32 @@
 # timeutilities
 
-Description
------------
-timeutilities is for time manipulation and management with classes designed for handling multiple time functions.
+A morden, robust and flexible way to represent and manipulate time, Including operations involving days, hours, minutes, and seconds. It supports `datetime` conversions and tick operations for real-time tracking. Along with arithmetic operations to facilitate easy time calculations.
 
-Installation
--------
+## Installation
+
 ```bash
 pip3 install timeutilities
 ```
 
-Examples
----------
+## Examples
+
 - Get current time
+
 ```python
 from timeutilities import Time
 now = Time.now()
 ```
+
 - From DateTime
+
 ```python
 from timeutilities import Time
 from datetime import datetime
 now = Time.from_datetime(datetime.now())
 ```
+
 - Arithmetic operations
+
 ```python
 from timeutilities import Time
 from time import sleep
@@ -42,7 +45,3 @@ print(current_time < previous_time)
 print(current_time >= previous_time)
 print(current_time <= previous_time)
 ```
-Documentation
-----------------
-~~Availiable at http://astraldev.github.io/timeutilities~~
-
